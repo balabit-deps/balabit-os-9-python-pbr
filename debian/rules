@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=pbr
+
+UPSTREAM_GIT := https://github.com/openstack-dev/pbr.git
+include /usr/share/openstack-pkg-tools/pkgos.make
+
+#export http_proxy=127.0.0.1:9
+#export https_proxy=127.0.0.1:9
+
+%:
+	dh $@ --buildsystem=pybuild --with python3,sphinxdoc
+
+override_dh_auto_clean:
+	rm -rf .stestr build __pycache__
+
+override_dh_auto_build:
+	echo "Do nothing..."
+
+override_dh_auto_install:
+	pkgos-dh_auto_install --no-py2
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	if ! dpkg-vendor --derives-from ubuntu; then \
+		set -e && $(CURDIR)/debian/tests/unit; \
+	fi
+endif
+
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. PYTHON=python3 python3 -m sphinx -b html doc/source $(CURDIR)/debian/python-pbr-doc/usr/share/doc/python-pbr-doc/html
+	dh_sphinxdoc
+endif
+
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3

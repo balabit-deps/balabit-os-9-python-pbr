@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+# Skip execution of tests if in container (armhf) due to test timeouts
+systemd-detect-virt --container && exit 0
+
+pkgos-dh_auto_test --no-py2 'pbr\.tests(?!.*test_packaging\.TestRequirementParsing\.test_requirement_parsing.*)'
